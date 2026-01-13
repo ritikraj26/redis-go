@@ -13,6 +13,8 @@ import (
 var _ = net.Listen
 var _ = os.Exit
 
+var data = make(map[string]string)
+
 func main() {
 	// Start listening on TCP port 6379 on all interfaces.
 	l, err := net.Listen("tcp", "0.0.0.0:6379")
@@ -52,6 +54,10 @@ func handleConnection(conn net.Conn) {
 			continue
 		}
 
+		for i := 0; i < len(args); i++ {
+			fmt.Println(args[i])
+		}
+
 		cmd := strings.ToUpper(args[0])
 
 		switch cmd {
@@ -62,6 +68,24 @@ func handleConnection(conn net.Conn) {
 				writeError(conn, "ECHO requires an argument")
 			} else {
 				writeBulkString(conn, args[1])
+			}
+		case "SET":
+			if len(args) < 2 {
+				writeError(conn, "SET requires arguments (key and value)")
+			} else {
+				data[args[1]] = args[2]
+				writeSimpleString(conn, "OK")
+			}
+		case "GET":
+			if len(args) < 2 {
+				writeError(conn, "Get requires an argument (key)")
+			} else {
+				val, ok := data[args[1]]
+				if ok {
+					writeBulkString(conn, val)
+				} else {
+					writeError(conn, "Key not present")
+				}
 			}
 		default:
 			writeError(conn, "Unknown command: "+cmd)
@@ -104,12 +128,14 @@ func readRESP(reader *bufio.Reader) ([]string, error) {
 
 		arg := make([]byte, argLen+2) // +2 for \r\n
 		_, err = reader.Read(arg)
+		fmt.Println("Read arg:", string(arg))
 		if err != nil {
 			return nil, err
 		}
 
 		args = append(args, string(arg[:argLen]))
 	}
+	fmt.Println("Parsed args:", args)
 	return args, nil
 }
 
