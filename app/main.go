@@ -7,13 +7,20 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Ensures gofmt doesn't remove the "net" and "os" imports in stage 1 (feel free to remove this!)
 var _ = net.Listen
 var _ = os.Exit
 
-var data = make(map[string]string)
+// var data = make(map[string]string)
+type data struct {
+	value  string
+	expiry *time.Time
+}
+
+var store = make(map[string]data)
 
 func main() {
 	// Start listening on TCP port 6379 on all interfaces.
@@ -70,19 +77,59 @@ func handleConnection(conn net.Conn) {
 				writeBulkString(conn, args[1])
 			}
 		case "SET":
-			if len(args) < 2 {
+			if len(args) < 3 {
 				writeError(conn, "SET requires arguments (key and value)")
 			} else {
-				data[args[1]] = args[2]
+				key := args[1]
+				value := args[2]
+
+				var expiry *time.Time
+
+				if len(args) >= 5 {
+					ttl, err := strconv.Atoi(args[4])
+					if err != nil {
+						writeError(conn, "ERR invalid expire time")
+						return
+					}
+
+					var d time.Duration
+					switch strings.ToUpper(args[3]) {
+					case "EX":
+						d = time.Duration(ttl) * time.Second
+					case "PX":
+						d = time.Duration(ttl) * time.Millisecond
+					default:
+						writeError(conn, "ERR invalid expire option")
+						return
+					}
+
+					t := time.Now().Add(d)
+					expiry = &t
+				}
+
+				store[key] = data{
+					value:  value,
+					expiry: expiry, // nil if not provided
+				}
 				writeSimpleString(conn, "OK")
 			}
 		case "GET":
 			if len(args) < 2 {
 				writeError(conn, "Get requires an argument (key)")
 			} else {
-				val, ok := data[args[1]]
+				val, ok := store[args[1]]
 				if ok {
-					writeBulkString(conn, val)
+					if val.expiry != nil {
+						if time.Now().After(*val.expiry) {
+							delete(store, args[1])
+							writeNullString(conn)
+						} else {
+							writeBulkString(conn, val.value)
+						}
+					} else {
+						writeBulkString(conn, val.value)
+					}
+
 				} else {
 					writeError(conn, "Key not present")
 				}
@@ -145,6 +192,10 @@ func writeSimpleString(conn net.Conn, message string) {
 
 func writeBulkString(conn net.Conn, message string) {
 	conn.Write([]byte(fmt.Sprintf("$%d\r\n%s\r\n", len(message), message)))
+}
+
+func writeNullString(conn net.Conn) {
+	conn.Write([]byte("$-1\r\n"))
 }
 
 func writeError(conn net.Conn, message string) {
