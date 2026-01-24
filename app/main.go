@@ -20,6 +20,8 @@ type data struct {
 	expiry *time.Time
 }
 
+var list = make(map[string][]string)
+
 var store = make(map[string]data)
 
 func main() {
@@ -134,6 +136,22 @@ func handleConnection(conn net.Conn) {
 					writeError(conn, "Key not present")
 				}
 			}
+		case "RPUSH":
+			if len(args) < 3 {
+				writeError(conn, "Too few arguments for RPUSH")
+			} else {
+				val, ok := list[args[1]]
+				if ok {
+					val = append(val, args[2])
+					list[args[1]] = val
+					// writeSimpleString(conn, strconv.Itoa(len(val)))
+					writeInteger(conn, uint32(len(val)))
+				} else {
+					val = []string{args[2]}
+					list[args[1]] = val
+					writeInteger(conn, 1)
+				}
+			}
 		default:
 			writeError(conn, "Unknown command: "+cmd)
 		}
@@ -184,6 +202,10 @@ func readRESP(reader *bufio.Reader) ([]string, error) {
 	}
 	fmt.Println("Parsed args:", args)
 	return args, nil
+}
+
+func writeInteger(conn net.Conn, value uint32) {
+	conn.Write([]byte(fmt.Sprintf(":%d\r\n", value)))
 }
 
 func writeSimpleString(conn net.Conn, message string) {
