@@ -24,3 +24,10 @@ func WriteNullString(conn net.Conn) {
 func WriteError(conn net.Conn, message string) {
 	fmt.Fprintf(conn, "-%s\r\n", message)
 }
+
+func WriteArray(conn net.Conn, elements []string) {
+	fmt.Fprintf(conn, "*%d\r\n", len(elements))
+	for _, element := range elements {
+		WriteBulkString(conn, element)
+	}
+}

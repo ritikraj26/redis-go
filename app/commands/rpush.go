@@ -7,7 +7,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/store"
 )
 
-func RPush(conn net.Conn, args []string) {
+func rpushHandler(conn net.Conn, args []string) {
 	if len(args) < 3 {
 		resp.WriteError(conn, "Too few arguments for RPUSH")
 		return

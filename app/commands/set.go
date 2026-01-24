@@ -10,7 +10,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/store"
 )
 
-func Set(conn net.Conn, args []string) {
+func setHandler(conn net.Conn, args []string) {
 	if len(args) < 3 {
 		resp.WriteError(conn, "SET requires arguments (key and value)")
 		return

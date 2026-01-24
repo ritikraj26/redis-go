@@ -8,7 +8,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/store"
 )
 
-func Get(conn net.Conn, args []string) {
+func getHandler(conn net.Conn, args []string) {
 	if len(args) < 2 {
 		resp.WriteError(conn, "Get requires an argument (key)")
 		return
