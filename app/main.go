@@ -142,14 +142,19 @@ func handleConnection(conn net.Conn) {
 			} else {
 				val, ok := list[args[1]]
 				if ok {
-					val = append(val, args[2])
+					for i := 2; i < len(args); i++ {
+						val = append(val, args[i])
+					}
 					list[args[1]] = val
 					// writeSimpleString(conn, strconv.Itoa(len(val)))
 					writeInteger(conn, uint32(len(val)))
 				} else {
-					val = []string{args[2]}
+					val = []string{}
+					for i := 2; i < len(args); i++ {
+						val = append(val, args[i])
+					}
 					list[args[1]] = val
-					writeInteger(conn, 1)
+					writeInteger(conn, uint32(len(val)))
 				}
 			}
 		default:
