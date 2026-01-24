@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/codecrafters-io/redis-starter-go/app/commands"
+	"github.com/codecrafters-io/redis-starter-go/app/resp"
 )
 
 // Ensures gofmt doesn't remove the "net" and "os" imports in stage 1 (feel free to remove this!)
@@ -55,7 +58,7 @@ func handleConnection(conn net.Conn) {
 		args, err := readRESP(reader)
 		if err != nil {
 			fmt.Println("Error reading from connection: ", err.Error())
-			writeError(conn, "Error reading input")
+			resp.WriteError(conn, "Error reading input")
 			return
 		}
 
@@ -69,97 +72,12 @@ func handleConnection(conn net.Conn) {
 
 		cmd := strings.ToUpper(args[0])
 
-		switch cmd {
-		case "PING":
-			writeSimpleString(conn, "PONG")
-		case "ECHO":
-			if len(args) < 2 {
-				writeError(conn, "ECHO requires an argument")
-			} else {
-				writeBulkString(conn, args[1])
-			}
-		case "SET":
-			if len(args) < 3 {
-				writeError(conn, "SET requires arguments (key and value)")
-			} else {
-				key := args[1]
-				value := args[2]
-
-				var expiry *time.Time
-
-				if len(args) >= 5 {
-					ttl, err := strconv.Atoi(args[4])
-					if err != nil {
-						writeError(conn, "ERR invalid expire time")
-						return
-					}
-
-					var d time.Duration
-					switch strings.ToUpper(args[3]) {
-					case "EX":
-						d = time.Duration(ttl) * time.Second
-					case "PX":
-						d = time.Duration(ttl) * time.Millisecond
-					default:
-						writeError(conn, "ERR invalid expire option")
-						return
-					}
-
-					t := time.Now().Add(d)
-					expiry = &t
-				}
-
-				store[key] = data{
-					value:  value,
-					expiry: expiry, // nil if not provided
-				}
-				writeSimpleString(conn, "OK")
-			}
-		case "GET":
-			if len(args) < 2 {
-				writeError(conn, "Get requires an argument (key)")
-			} else {
-				val, ok := store[args[1]]
-				if ok {
-					if val.expiry != nil {
-						if time.Now().After(*val.expiry) {
-							delete(store, args[1])
-							writeNullString(conn)
-						} else {
-							writeBulkString(conn, val.value)
-						}
-					} else {
-						writeBulkString(conn, val.value)
-					}
-
-				} else {
-					writeError(conn, "Key not present")
-				}
-			}
-		case "RPUSH":
-			if len(args) < 3 {
-				writeError(conn, "Too few arguments for RPUSH")
-			} else {
-				val, ok := list[args[1]]
-				if ok {
-					for i := 2; i < len(args); i++ {
-						val = append(val, args[i])
-					}
-					list[args[1]] = val
-					// writeSimpleString(conn, strconv.Itoa(len(val)))
-					writeInteger(conn, uint32(len(val)))
-				} else {
-					val = []string{}
-					for i := 2; i < len(args); i++ {
-						val = append(val, args[i])
-					}
-					list[args[1]] = val
-					writeInteger(conn, uint32(len(val)))
-				}
-			}
-		default:
-			writeError(conn, "Unknown command: "+cmd)
+		if handler, ok := commands.Registry[cmd]; ok {
+			handler(conn, args)
+		} else {
+			resp.WriteError(conn, "Unknown command: "+cmd)
 		}
+
 	}
 }
 
@@ -207,24 +125,4 @@ func readRESP(reader *bufio.Reader) ([]string, error) {
 	}
 	fmt.Println("Parsed args:", args)
 	return args, nil
-}
-
-func writeInteger(conn net.Conn, value uint32) {
-	conn.Write([]byte(fmt.Sprintf(":%d\r\n", value)))
-}
-
-func writeSimpleString(conn net.Conn, message string) {
-	conn.Write([]byte("+" + message + "\r\n"))
-}
-
-func writeBulkString(conn net.Conn, message string) {
-	conn.Write([]byte(fmt.Sprintf("$%d\r\n%s\r\n", len(message), message)))
-}
-
-func writeNullString(conn net.Conn) {
-	conn.Write([]byte("$-1\r\n"))
-}
-
-func writeError(conn net.Conn, message string) {
-	conn.Write([]byte("-" + message + "\r\n"))
 }
