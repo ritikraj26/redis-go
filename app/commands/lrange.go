@@ -14,7 +14,12 @@ func lrangeHandler(conn net.Conn, args []string) {
 		return
 	}
 
-	val := store.List[args[1]]
+	val, exists := store.List[args[1]]
+	if !exists || len(val) == 0 {
+		resp.WriteArray(conn, []string{}) // Return empty array if list doesn't exist or is empty
+		return
+	}
+
 	var respArray = []string{}
 
 	leftIndex, err := strconv.Atoi(args[2])
@@ -27,10 +32,18 @@ func lrangeHandler(conn net.Conn, args []string) {
 	}
 
 	if leftIndex < 0 {
+		leftIndex += len(val)
+	}
+
+	if rightIndex < 0 {
+		rightIndex += len(val)
+	}
+
+	if leftIndex < 0 {
 		leftIndex = 0
 	}
 
-	if rightIndex > len(val) {
+	if rightIndex >= len(val) {
 		rightIndex = len(val) - 1
 	}
 
