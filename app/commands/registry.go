@@ -10,5 +10,6 @@ var Registry = map[string]CommandFunc{
 	"SET":    setHandler,
 	"GET":    getHandler,
 	"RPUSH":  rpushHandler,
+	"LPUSH":  lpushHandler,
 	"LRANGE": lrangeHandler,
 }
