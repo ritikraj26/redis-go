@@ -2,6 +2,7 @@ package commands
 
 import (
 	"net"
+	"strconv"
 
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
 	"github.com/codecrafters-io/redis-starter-go/app/store"
@@ -19,8 +20,32 @@ func lpopHandler(conn net.Conn, args []string) {
 		return
 	}
 
-	element := val[0]
-	val = val[1:]
+	if len(args) == 2 {
+		elem := val[0]
+		store.List[args[1]] = val[1:]
+		resp.WriteBulkString(conn, elem)
+		return
+	}
+
+	count, err := strconv.Atoi(args[2])
+	if err != nil {
+		resp.WriteError(conn, "ERR value is not an integer")
+		return
+	}
+
+	if count <= 0 {
+		resp.WriteNullString(conn)
+		return
+	}
+
+	count = min(count, len(val))
+
+	var elements []string
+	for i := 0; i < count; i++ {
+		elements = append(elements, val[i])
+	}
+	val = val[count:]
 	store.List[args[1]] = val
-	resp.WriteBulkString(conn, element)
+
+	resp.WriteArray(conn, elements)
 }
