@@ -1,6 +1,10 @@
 package store
 
-import "time"
+import (
+	"time"
+	"net"
+	"sync"
+)
 
 type Data struct {
 	Value  string
@@ -8,3 +12,8 @@ type Data struct {
 }
 
 var Store = make(map[string]Data)
+
+var (
+	BlockingClients = make(map[string][]chan net.Conn)
+	Mu              sync.Mutex
+)

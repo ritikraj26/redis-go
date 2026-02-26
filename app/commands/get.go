@@ -14,8 +14,8 @@ func getHandler(conn net.Conn, args []string) {
 		return
 	}
 
-	val, ok := store.Store[args[1]]
-	if !ok {
+	val, exists := store.Store[args[1]]
+	if !exists {
 		resp.WriteNullString(conn)
 		return
 	}

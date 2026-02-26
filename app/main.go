@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/app/commands"
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
@@ -16,16 +15,6 @@ import (
 // Ensures gofmt doesn't remove the "net" and "os" imports in stage 1 (feel free to remove this!)
 var _ = net.Listen
 var _ = os.Exit
-
-// var data = make(map[string]string)
-type data struct {
-	value  string
-	expiry *time.Time
-}
-
-var list = make(map[string][]string)
-
-var store = make(map[string]data)
 
 func main() {
 	// Start listening on TCP port 6379 on all interfaces.
