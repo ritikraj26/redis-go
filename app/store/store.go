@@ -2,7 +2,6 @@ package store
 
 import (
 	"time"
-	"net"
 	"sync"
 )
 
@@ -14,6 +13,6 @@ type Data struct {
 var Store = make(map[string]Data)
 
 var (
-	BlockingClients = make(map[string][]chan net.Conn)
+	BlockingClients = make(map[string][]chan string)
 	Mu              sync.Mutex
 )

@@ -31,3 +31,7 @@ func WriteArray(conn net.Conn, elements []string) {
 		WriteBulkString(conn, element)
 	}
 }
+
+func WriteNullArray(conn net.Conn) {
+	fmt.Fprint(conn, "*-1\r\n")
+}
