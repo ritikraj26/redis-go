@@ -13,7 +13,9 @@ func llenHandler(conn net.Conn, args []string) {
 		return
 	}
 
-	val, exists := store.List[args[1]]
+	key := args[1]
+
+	val, exists := store.List[key]
 	if !exists || len(val) == 0 {
 		resp.WriteInteger(conn, 0)
 		return

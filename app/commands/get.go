@@ -14,14 +14,16 @@ func getHandler(conn net.Conn, args []string) {
 		return
 	}
 
-	val, exists := store.Store[args[1]]
+	key := args[1]
+
+	val, exists := store.Store[key]
 	if !exists {
 		resp.WriteNullString(conn)
 		return
 	}
 
 	if val.Expiry != nil && time.Now().After(*val.Expiry) {
-		delete(store.Store, args[1])
+		delete(store.Store, key)
 		resp.WriteNullString(conn)
 		return
 	}

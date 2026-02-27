@@ -15,4 +15,6 @@ var Registry = map[string]CommandFunc{
 	"LLEN":   llenHandler,
 	"LPOP":   lpopHandler,
 	"BLPOP":  blpopHandler,
+
+	"TYPE":   typeHandler,
 }

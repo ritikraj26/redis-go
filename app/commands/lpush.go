@@ -13,11 +13,13 @@ func lpushHandler(conn net.Conn, args []string) {
 		return
 	}
 
-	val := store.List[args[1]]
+	key := args[1]
+
+	val := store.List[key]
 	for i := 2; i < len(args); i++ {
 		val = append([]string{args[i]}, val...)
 	}
-	store.List[args[1]] = val
+	store.List[key] = val
 
 	resp.WriteInteger(conn, uint32(len(val)))
 }

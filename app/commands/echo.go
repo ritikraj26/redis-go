@@ -11,5 +11,7 @@ func echoHandler(conn net.Conn, args []string) {
 		resp.WriteError(conn, "ECHO requires an argument")
 		return
 	}
-	resp.WriteBulkString(conn, args[1])
+
+	key := args[1]
+	resp.WriteBulkString(conn, key)
 }

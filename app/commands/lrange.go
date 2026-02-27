@@ -14,7 +14,9 @@ func lrangeHandler(conn net.Conn, args []string) {
 		return
 	}
 
-	val, exists := store.List[args[1]]
+	key := args[1]
+
+	val, exists := store.List[key]
 	if !exists || len(val) == 0 {
 		resp.WriteArray(conn, []string{}) // Return empty array if list doesn't exist or is empty
 		return
