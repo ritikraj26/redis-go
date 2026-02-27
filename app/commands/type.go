@@ -15,12 +15,21 @@ func typeHandler(conn net.Conn, args []string) {
 
 	key := args[1]
 
-	_, exists := store.Store[key]
-	if !exists {
-		resp.WriteSimpleString(conn, "none")
-		return
-	}
+    if _, exists := store.Store[key]; exists {
+        resp.WriteSimpleString(conn, "string")
+        return
+    }
 
-	resp.WriteSimpleString(conn, "string")
+    if _, exists := store.List[key]; exists {
+        resp.WriteSimpleString(conn, "list")
+        return
+    }
+
+    if _, exists := store.Stream[key]; exists {
+        resp.WriteSimpleString(conn, "stream")
+        return
+    }
+
+	resp.WriteSimpleString(conn, "none")
 	return
 }

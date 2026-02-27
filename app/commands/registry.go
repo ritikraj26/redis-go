@@ -17,4 +17,5 @@ var Registry = map[string]CommandFunc{
 	"BLPOP":  blpopHandler,
 
 	"TYPE":   typeHandler,
+	"XADD":   xaddHandler,
 }
