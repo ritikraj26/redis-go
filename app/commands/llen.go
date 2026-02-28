@@ -15,11 +15,14 @@ func llenHandler(conn net.Conn, args []string) {
 
 	key := args[1]
 
+	store.Mu.Lock()
 	val, exists := store.List[key]
 	if !exists || len(val) == 0 {
+		store.Mu.Unlock()
 		resp.WriteInteger(conn, 0)
 		return
 	}
 
+	store.Mu.Unlock()
 	resp.WriteInteger(conn, uint32(len(val)))
 }

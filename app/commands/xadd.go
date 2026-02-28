@@ -25,7 +25,9 @@ func xaddHandler(conn net.Conn, args []string) {
 		data.Fields[args[i]]=args[i+1]
 	}
 
+	store.Mu.Lock()
 	store.Stream[streamName] = append(store.Stream[streamName], data)
+	store.Mu.Unlock()
 
 	resp.WriteBulkString(conn, id)
 	return

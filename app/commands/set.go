@@ -43,10 +43,12 @@ func setHandler(conn net.Conn, args []string) {
 		expiry = &t
 	}
 
+	store.Mu.Lock()
 	store.Store[key] = store.Data{
 		Value:  value,
 		Expiry: expiry,
 	}
+	store.Mu.Unlock()
 
 	resp.WriteSimpleString(conn, "OK")
 }

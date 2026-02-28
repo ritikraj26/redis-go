@@ -1,8 +1,8 @@
 package store
 
 import (
-	"time"
 	"sync"
+	"time"
 )
 
 type Data struct {
@@ -10,17 +10,17 @@ type Data struct {
 	Expiry *time.Time
 }
 
-var Store = make(map[string]Data)
-
-var List = make(map[string][]string)
-
 var (
+	Store  = make(map[string]Data)
+	List   = make(map[string][]string)
+	Stream = make(map[string][]StreamEntry)
+
 	BlockingClients = make(map[string][]chan string)
-	Mu              sync.Mutex
+
+	Mu sync.Mutex
 )
 
 type StreamEntry struct {
 	Id     string
 	Fields map[string]string
 }
-var Stream = make(map[string][]StreamEntry)

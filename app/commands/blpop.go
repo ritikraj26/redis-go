@@ -26,7 +26,7 @@ func blpopHandler(conn net.Conn, args []string) {
 	if len(store.List[key]) > 0 {
 		element := store.List[key][0]
 		store.List[key] = store.List[key][1:] // removing the first element
-
+		store.Mu.Unlock()
 		resp.WriteArray(conn, []string{key, element})
 		return
 	}

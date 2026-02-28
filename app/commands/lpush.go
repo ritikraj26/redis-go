@@ -15,6 +15,9 @@ func lpushHandler(conn net.Conn, args []string) {
 
 	key := args[1]
 
+	store.Mu.Lock()
+	defer store.Mu.Unlock()
+
 	val := store.List[key]
 	for i := 2; i < len(args); i++ {
 		val = append([]string{args[i]}, val...)
