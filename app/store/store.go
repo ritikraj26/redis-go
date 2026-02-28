@@ -10,6 +10,11 @@ type Data struct {
 	Expiry *time.Time
 }
 
+type StreamEntry struct {
+	Id     string
+	Fields map[string]string
+}
+
 var (
 	Store  = make(map[string]Data)
 	List   = make(map[string][]string)
@@ -19,8 +24,3 @@ var (
 
 	Mu sync.Mutex
 )
-
-type StreamEntry struct {
-	Id     string
-	Fields map[string]string
-}
