@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"fmt"
 	"net"
+	"time"
 	"strings"
 	"strconv"
 
@@ -9,7 +11,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/store"
 )
 
-func parseID(id string) (int64, int64, bool) {
+func parseId(id string) (int64, int64, bool) {
 	parts := strings.SplitN(id, "-", 2)
 	if len(parts) != 2 {
 		return 0, 0, false
@@ -26,35 +28,83 @@ func parseID(id string) (int64, int64, bool) {
 }
 
 func isValidId(streamName string, id string) (bool, string) {
-	ms, seq, ok := parseID(id)
+	ms, seq, ok := parseId(id)
 	if !ok {
 		return false, "ERR Invalid stream ID specified as stream command argument"
 	}
 
-	// RULE #1: 0-0 is ALWAYS invalid
 	if ms == 0 && seq == 0 {
 		return false, "ERR The ID specified in XADD must be greater than 0-0"
 	}
 
-	store.Mu.Lock()
-	defer store.Mu.Unlock()
-
-	stream, exists := store.Stream[streamName]
-
-	// Empty or non-existing stream → OK (since id != 0-0)
-	if !exists || len(stream) == 0 {
+	stream := store.Stream[streamName]
+	if len(stream) == 0 {
 		return true, ""
 	}
 
-	// Compare with last ID
-	last := stream[len(stream)-1]
-	lastMs, lastSeq, _ := parseID(last.Id)
-
+	lastMs, lastSeq, _ := parseId(stream[len(stream)-1].Id)
 	if ms > lastMs || (ms == lastMs && seq > lastSeq) {
 		return true, ""
 	}
 
 	return false, "ERR The ID specified in XADD is equal or smaller than the target stream top item"
+}
+
+func generateId(streamName string, id string) (string, string) {
+	store.Mu.Lock()
+	defer store.Mu.Unlock()
+
+	stream := store.Stream[streamName]
+
+	// Case 1: *
+	if id == "*" {
+		ms := time.Now().UnixMilli()
+		seq := int64(0)
+
+		if len(stream) > 0 {
+			lastMs, lastSeq, _ := parseId(stream[len(stream)-1].Id)
+			if lastMs == ms {
+				seq = lastSeq + 1
+			}
+		}
+		return fmt.Sprintf("%d-%d", ms, seq), ""
+	}
+
+	// Case 2: <ms>-*
+	if strings.HasSuffix(id, "-*") {
+		msPart := strings.TrimSuffix(id, "-*")
+		ms, err := strconv.ParseInt(msPart, 10, 64)
+		if err != nil {
+			return "", "ERR Invalid stream ID specified as stream command argument"
+		}
+
+		var seq int64
+
+		if len(stream) == 0 {
+			if ms == 0 {
+				seq = 1
+			} else {
+				seq = 0
+			}
+		} else {
+			lastMs, lastSeq, _ := parseId(stream[len(stream)-1].Id)
+			if lastMs == ms {
+				seq = lastSeq + 1
+			} else {
+				seq = 0
+			}
+		}
+
+		return fmt.Sprintf("%d-%d", ms, seq), ""
+	}
+
+	// Case 3: explicit ID
+	ok, err := isValidId(streamName, id)
+	if !ok {
+		return "", err
+	}
+
+	return id, ""
 }
 
 func xaddHandler(conn net.Conn, args []string) {
@@ -66,14 +116,14 @@ func xaddHandler(conn net.Conn, args []string) {
 	streamName := args[1]
 	id := args[2]
 
-	ok, err := isValidId(streamName, id)
-	if !ok {
+	newId, err := generateId(streamName, id)
+	if err != "" {
 		resp.WriteError(conn, err)
 		return
 	}
 
 	data := store.StreamEntry{
-		Id:     id,
+		Id:     newId,
 		Fields: make(map[string]string),
 	}
 
@@ -85,6 +135,6 @@ func xaddHandler(conn net.Conn, args []string) {
 	store.Stream[streamName] = append(store.Stream[streamName], data)
 	store.Mu.Unlock()
 
-	resp.WriteBulkString(conn, id)
+	resp.WriteBulkString(conn, newId)
 	return
 }
