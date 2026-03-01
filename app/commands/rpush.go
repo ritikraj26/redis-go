@@ -29,7 +29,7 @@ func rpushHandler(conn net.Conn, args []string) {
 		return
 		// go func() {
 		// 	client := <-clientChan
-		// 	resp.WriteArray(client, []string{key, args[2]})
+		// 	resp.WriteBulkStringArray(client, []string{key, args[2]})
 		// }()
 	}
 

@@ -5,12 +5,21 @@ import (
 	"net"
 	"strings"
 	"strconv"
+	"math"
 
 	"github.com/codecrafters-io/redis-starter-go/app/resp"
 	"github.com/codecrafters-io/redis-starter-go/app/store"
 )
 
 func parseRangeId(id string, isStart bool) (int64, int64) {
+	if id == "-" {
+		return 0, 0
+	}
+
+	if id == "+" {
+		return math.MaxInt64, math.MaxInt64
+	}
+
 	// If sequence number missing
 	if !strings.Contains(id, "-") {
 		ms, _ := strconv.ParseInt(id, 10, 64)
@@ -45,11 +54,10 @@ func xrangeHandler(conn net.Conn, args []string) {
 
 	// Return empty array if stream missing
 	if len(stream) == 0 {
-		resp.WriteArray(conn, []string{})
+		resp.WriteBulkStringArray(conn, []string{})
 		return
 	}
 
-	// Collect matching entries
 	results := []store.StreamEntry{}
 	for _, entry := range stream {
 		ms, seq := parseRangeId(entry.Id, true)

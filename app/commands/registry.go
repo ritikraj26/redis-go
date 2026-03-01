@@ -19,4 +19,5 @@ var Registry = map[string]CommandFunc{
 	"TYPE":   typeHandler,
 	"XADD":   xaddHandler,
 	"XRANGE": xrangeHandler,
+	"XREAD":  xreadHandler,
 }

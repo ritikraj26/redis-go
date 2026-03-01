@@ -46,7 +46,7 @@ func xreadHandler(conn net.Conn, args []string) {
 	store.Mu.Unlock()
 
 	if !exists || len(stream) == 0 {
-		resp.WriteArray(conn, []string{})
+		resp.WriteBulkStringArray(conn, []string{})
 		return
 	}
 
@@ -59,7 +59,7 @@ func xreadHandler(conn net.Conn, args []string) {
 	}
 
 	if len(entries) == 0 {
-		resp.WriteArray(conn, []string{})
+		resp.WriteBulkStringArray(conn, []string{})
 		return
 	}
 

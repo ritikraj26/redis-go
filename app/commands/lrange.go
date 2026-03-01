@@ -21,7 +21,7 @@ func lrangeHandler(conn net.Conn, args []string) {
 	store.Mu.Unlock()
 
 	if !exists || len(val) == 0 {
-		resp.WriteArray(conn, []string{}) // Return empty array if list doesn't exist or is empty
+		resp.WriteBulkStringArray(conn, []string{}) // Return empty array if list doesn't exist or is empty
 		return
 	}
 
@@ -53,7 +53,7 @@ func lrangeHandler(conn net.Conn, args []string) {
 	}
 
 	if leftIndex > rightIndex || leftIndex >= len(val) {
-		resp.WriteArray(conn, []string{})
+		resp.WriteBulkStringArray(conn, []string{})
 		return
 	}
 
@@ -61,5 +61,5 @@ func lrangeHandler(conn net.Conn, args []string) {
 		respArray = append(respArray, val[i])
 	}
 
-	resp.WriteArray(conn, respArray)
+	resp.WriteBulkStringArray(conn, respArray)
 }

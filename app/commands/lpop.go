@@ -20,7 +20,7 @@ func lpopHandler(conn net.Conn, args []string) {
 	val, exists := store.List[key]
 	if !exists || len(val) == 0 {
 		store.Mu.Unlock()
-		resp.WriteNullString(conn)
+		resp.WriteNullBulkString(conn)
 		return
 	}
 
@@ -41,7 +41,7 @@ func lpopHandler(conn net.Conn, args []string) {
 
 	if count <= 0 {
 		store.Mu.Unlock()
-		resp.WriteNullString(conn)
+		resp.WriteNullBulkString(conn)
 		return
 	}
 
@@ -55,5 +55,5 @@ func lpopHandler(conn net.Conn, args []string) {
 	store.List[key] = val
 	store.Mu.Unlock()
 
-	resp.WriteArray(conn, elements)
+	resp.WriteBulkStringArray(conn, elements)
 }
