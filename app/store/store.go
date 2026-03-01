@@ -12,7 +12,7 @@ type Data struct {
 
 type StreamEntry struct {
 	Id     string
-	Fields map[string]string
+	Fields []string
 }
 
 var (

@@ -124,11 +124,12 @@ func xaddHandler(conn net.Conn, args []string) {
 
 	data := store.StreamEntry{
 		Id:     newId,
-		Fields: make(map[string]string),
+		Fields: []string{},
 	}
 
+	// Append fields in order: key, value, key, value...
 	for i := 3; i < len(args); i += 2 {
-		data.Fields[args[i]]=args[i+1]
+		data.Fields = append(data.Fields, args[i], args[i+1])
 	}
 
 	store.Mu.Lock()
@@ -136,5 +137,4 @@ func xaddHandler(conn net.Conn, args []string) {
 	store.Mu.Unlock()
 
 	resp.WriteBulkString(conn, newId)
-	return
 }
