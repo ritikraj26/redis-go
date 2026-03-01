@@ -37,7 +37,7 @@ func isValidId(streamName string, id string) (bool, string) {
 		return false, "ERR The ID specified in XADD must be greater than 0-0"
 	}
 
-	stream := store.Stream[streamName]
+	stream := store.Streams[streamName]
 	if len(stream) == 0 {
 		return true, ""
 	}
@@ -54,7 +54,7 @@ func generateId(streamName string, id string) (string, string) {
 	store.Mu.Lock()
 	defer store.Mu.Unlock()
 
-	stream := store.Stream[streamName]
+	stream := store.Streams[streamName]
 
 	// Case 1: *
 	if id == "*" {
@@ -133,7 +133,7 @@ func xaddHandler(conn net.Conn, args []string) {
 	}
 
 	store.Mu.Lock()
-	store.Stream[streamName] = append(store.Stream[streamName], data)
+	store.Streams[streamName] = append(store.Streams[streamName], data)
 	store.Mu.Unlock()
 
 	resp.WriteBulkString(conn, newId)

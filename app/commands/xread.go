@@ -27,57 +27,72 @@ func parseReadId(id string) (int64, int64, bool) {
 }
 
 func xreadHandler(conn net.Conn, args []string) {
-	if len(args) != 4 {
+	if len(args) < 4 {
 		resp.WriteError(conn, "ERR wrong number of arguments for XREAD")
 		return
 	}
 
-	key := args[2]
-	startId := args[3]
-
-	startMs, startSeq, ok := parseReadId(startId)
-	if !ok {
-		resp.WriteError(conn, "ERR Invalid stream ID specified as stream command argument")
-		return
+	type StreamData struct {
+		Key     string
+		Entries []store.StreamEntry
 	}
 
-	store.Mu.Lock()
-	stream, exists := store.Stream[key]
-	store.Mu.Unlock()
+	streamCount := (len(args) - 2) / 2
+	keys := args[2 : 2 + streamCount]
+	ids := args[2 + streamCount : ]
 
-	if !exists || len(stream) == 0 {
-		resp.WriteBulkStringArray(conn, []string{})
-		return
-	}
+	var result []StreamData
 
-	var entries []store.StreamEntry
-	for _, entry := range stream {
-		ms, seq, _ := parseReadId(entry.Id)
-		if ms > startMs || (ms == startMs && seq >= startSeq) {
-			entries = append(entries, entry)
+	for i := 0; i < streamCount; i++ {
+		key := keys[i]
+		startId := ids[i]
+
+		startMs, startSeq, ok := parseReadId(startId)
+		if !ok {
+			resp.WriteError(conn, "ERR Invalid stream ID specified as stream command argument")
+			return
+		}
+
+		store.Mu.Lock()
+		stream, exists := store.Streams[key]
+		store.Mu.Unlock()
+
+		if !exists || len(stream) == 0 {
+			continue
+		}
+
+		var entries []store.StreamEntry
+		for _, entry := range stream {
+			ms, seq, _ := parseReadId(entry.Id)
+			if ms > startMs || (ms == startMs && seq >= startSeq) {
+                entries = append(entries, entry)
+            }
+		}
+
+		if len(entries) > 0 {
+			result = append(result, StreamData{Key: key, Entries: entries})
 		}
 	}
 
-	if len(entries) == 0 {
-		resp.WriteBulkStringArray(conn, []string{})
-		return
-	}
+	if len(result) == 0 {
+        resp.WriteBulkStringArray(conn, []string{})
+        return
+    }
 
-	// single stream
-	fmt.Fprintf(conn, "*1\r\n")
-	// two elements per stream
-	fmt.Fprintf(conn, "*2\r\n")
-
-	resp.WriteBulkString(conn, key)
-
-	fmt.Fprintf(conn, "*%d\r\n", len(entries))
-	for _, entry := range entries {
+	// multiple stream
+	fmt.Fprintf(conn, "*%d\r\n", len(result))
+	for _, entries := range result {
 		fmt.Fprintf(conn, "*2\r\n")
-		resp.WriteBulkString(conn, entry.Id)
+		resp.WriteBulkString(conn, entries.Key)
+		fmt.Fprintf(conn, "*%d\r\n", len(entries.Entries))
+		for _, entry := range entries.Entries {
+			fmt.Fprintf(conn, "*2\r\n")
+			resp.WriteBulkString(conn, entry.Id)
 
-		fmt.Fprintf(conn, "*%d\r\n", len(entry.Fields))
-		for _, f := range entry.Fields {
-			resp.WriteBulkString(conn, f)
+			fmt.Fprintf(conn, "*%d\r\n", len(entry.Fields))
+			for _, f := range entry.Fields {
+				resp.WriteBulkString(conn, f)
+			}
 		}
 	}
 }

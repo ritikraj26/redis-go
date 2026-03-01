@@ -18,7 +18,7 @@ type StreamEntry struct {
 var (
 	Store  = make(map[string]Data)
 	List   = make(map[string][]string)
-	Stream = make(map[string][]StreamEntry)
+	Streams = make(map[string][]StreamEntry)
 
 	BlockingClients = make(map[string][]chan string)
 

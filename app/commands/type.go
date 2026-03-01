@@ -19,7 +19,7 @@ func typeHandler(conn net.Conn, args []string) {
 
 	_, isString := store.Store[key]
 	_, isList := store.List[key]
-	_, isStream := store.Stream[key]
+	_, isStream := store.Streams[key]
 
 	store.Mu.Unlock()
 

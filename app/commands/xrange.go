@@ -49,7 +49,7 @@ func xrangeHandler(conn net.Conn, args []string) {
 	endMs, endSeq := parseRangeId(end, false)
 
 	store.Mu.Lock()
-	stream := store.Stream[key]
+	stream := store.Streams[key]
 	store.Mu.Unlock()
 
 	// Return empty array if stream missing
