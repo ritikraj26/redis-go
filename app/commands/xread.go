@@ -57,9 +57,24 @@ func readStreams(keys, ids []string) []StreamData {
 
 func handleBlock(conn net.Conn, args []string) {
 	timeoutMs, _ := strconv.Atoi(args[2])
-	streamCount := (len(args) - 4) / 2
-	keys := args[4 : 4+streamCount]
-	ids := args[4+streamCount:]
+	keys := []string{}
+	ids := []string{}
+
+	if args[len(args) - 1] == "$" {
+		keys = args[4 : len(args) - 1]
+
+		for _, key := range keys {
+			if len(store.Streams[key]) > 0 {
+				ids = append(ids, store.Streams[key][len(store.Streams[key])-1].Id)
+			} else {
+				ids = append(ids, "0-0")
+			}
+		}
+	} else {
+		streamCount := (len(args) - 4) / 2
+		keys = args[4 : 4+streamCount]
+		ids = args[4+streamCount:]
+	}
 
 	ch := make(chan struct{}, 1)
 
