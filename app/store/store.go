@@ -16,11 +16,15 @@ type StreamEntry struct {
 }
 
 var (
-	Store  = make(map[string]Data)
-	List   = make(map[string][]string)
+	Store   = make(map[string]Data)
+	List    = make(map[string][]string)
 	Streams = make(map[string][]StreamEntry)
 
+	// BLPOP uses this (string payload)
 	BlockingClients = make(map[string][]chan string)
+
+	// XREAD BLOCK uses this (signal only)
+	StreamBlockingClients = make(map[string][]chan struct{})
 
 	Mu sync.Mutex
 )
