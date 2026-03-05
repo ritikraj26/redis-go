@@ -9,6 +9,8 @@ var Registry = map[string]CommandFunc{
 	"ECHO":   echoHandler,
 	"SET":    setHandler,
 	"GET":    getHandler,
+
+	// Lists
 	"RPUSH":  rpushHandler,
 	"LPUSH":  lpushHandler,
 	"LRANGE": lrangeHandler,
@@ -16,8 +18,12 @@ var Registry = map[string]CommandFunc{
 	"LPOP":   lpopHandler,
 	"BLPOP":  blpopHandler,
 
+	// Streams
 	"TYPE":   typeHandler,
 	"XADD":   xaddHandler,
 	"XRANGE": xrangeHandler,
 	"XREAD":  xreadHandler,
+
+	// Transactions
+	"INCR":   incrHandler,
 }
