@@ -69,6 +69,18 @@ func handleBlock(conn net.Conn, args []string) {
 	}
 	store.Mu.Unlock()
 
+	if timeoutMs == 0 {
+		<-ch
+		result := readStreams(keys, ids)
+		if len(result) == 0 {
+			resp.WriteNullArray(conn)
+			return
+		}
+
+		writeXReadResponse(conn, result)
+		return
+	}
+
 	select {
 	case <-ch:
 	case <-time.After(time.Duration(timeoutMs) * time.Millisecond):
