@@ -33,7 +33,7 @@ func blpopHandler(conn net.Conn, args []string) {
 
 	// block the client if the list is empty
 	clientChan := make(chan string, 1)
-	store.BlockingClients[key] = append(store.BlockingClients[key], clientChan)
+	store.ListBlockingClients[key] = append(store.ListBlockingClients[key], clientChan)
 	store.Mu.Unlock()
 
 	if timeoutSeconds == 0 {
@@ -47,10 +47,10 @@ func blpopHandler(conn net.Conn, args []string) {
 		resp.WriteBulkStringArray(conn, []string{key, element})
 	case <-time.After(time.Duration(timeoutSeconds * float64(time.Second))):
 		store.Mu.Lock()
-		waiters := store.BlockingClients[key]
+		waiters := store.ListBlockingClients[key]
 		for i, c := range waiters {
 			if c == clientChan {
-				store.BlockingClients[key] = append(waiters[:i], waiters[i+1:]...)
+				store.ListBlockingClients[key] = append(waiters[:i], waiters[i+1:]...)
 				break
 			}
 		}

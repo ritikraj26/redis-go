@@ -26,4 +26,5 @@ var Registry = map[string]CommandFunc{
 
 	// Transactions
 	"INCR":   incrHandler,
+	"MULTI":  multiHandler,
 }

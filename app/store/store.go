@@ -3,6 +3,7 @@ package store
 import (
 	"sync"
 	"time"
+	"net"
 )
 
 type Data struct {
@@ -21,10 +22,13 @@ var (
 	Streams = make(map[string][]StreamEntry)
 
 	// BLPOP uses this (string payload)
-	BlockingClients = make(map[string][]chan string)
+	ListBlockingClients = make(map[string][]chan string)
 
 	// XREAD BLOCK uses this (signal only)
 	StreamBlockingClients = make(map[string][]chan struct{})
+
+	// MULTI uses this
+	TransactionQueue = make(map[net.Conn][]string)
 
 	Mu sync.Mutex
 )

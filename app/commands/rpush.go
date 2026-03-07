@@ -19,9 +19,9 @@ func rpushHandler(conn net.Conn, args []string) {
 	// defer store.Mu.Unlock()
 
 	// If client is blocked
-	if chans, exists := store.BlockingClients[key]; exists && len(chans) > 0 {
+	if chans, exists := store.ListBlockingClients[key]; exists && len(chans) > 0 {
 		clientChan := chans[0]
-		store.BlockingClients[key] = store.BlockingClients[key][1:]
+		store.ListBlockingClients[key] = store.ListBlockingClients[key][1:]
 		store.Mu.Unlock()
 
 		clientChan <- args[2]
